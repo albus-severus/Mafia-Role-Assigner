@@ -2,50 +2,42 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mafia: Role Assigner</title>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <style>
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: Arial, sans-serif;
       padding: 20px;
-      background-color: #f2f2f2;
-      color: #333;
       font-size: 18px;
     }
-
-    h2, h3 {
-      font-size: 28px;
-      color: #222;
-    }
-
     input, select, button {
       font-size: 18px;
       padding: 10px;
       margin: 5px 0;
-      border-radius: 5px;
-      border: 1px solid #ccc;
       width: 100%;
       max-width: 400px;
+      box-sizing: border-box;
     }
-
-    button {
-      background-color: #4CAF50;
-      color: white;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
+    h2, h3, p {
+      font-size: 22px;
     }
-
-    button:hover {
-      background-color: #45a049;
-    }
-
     #players {
       margin-top: 20px;
     }
-
     .hidden {
       display: none;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
     }
   </style>
 </head>
