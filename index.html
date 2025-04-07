@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mafia: Role Assigner</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+      background-color: #f2f2f2;
+      color: #333;
+      font-size: 18px;
+    }
+
+    h2, h3 {
+      font-size: 28px;
+      color: #222;
+    }
+
+    input, select, button {
+      font-size: 18px;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    #players {
+      margin-top: 20px;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h2>Mafia: Role Assigner</h2>
+  <div id="home">
+    <input type="text" id="creatorName" placeholder="Your name">
+    <button onclick="showCreate()">Create Game</button>
+    <button onclick="showJoin()">Join Game</button>
+  </div>
+
+  <div id="create" class="hidden">
+    <p>Choose Mode:</p>
+    <select id="modeSelect" onchange="toggleRoleInputs()">
+      <option value="auto">Auto Mode (Formula)</option>
+      <option value="custom">Custom Role Distribution</option>
+    </select>
+    <p>Enter number of players:</p>
+    <input type="number" id="numPlayers">
+
+    <div id="customRoles" class="hidden">
+      <p>Enter number for each role (leave 0 if not needed):</p>
+      <input type="number" id="mafiaCount" placeholder="Mafia">
+      <input type="number" id="citizenCount" placeholder="Citizen">
+      <input type="number" id="doctorCount" placeholder="Doctor">
+      <input type="number" id="terroristCount" placeholder="Terrorist">
+      <input type="number" id="detectiveCount" placeholder="Detective">
+      <input type="number" id="godCount" placeholder="God">
+    </div>
+
+    <button onclick="createGame()">Create</button>
+    <p id="gameCodeDisplay"></p>
+  </div>
+
+  <div id="join" class="hidden">
+    <p>Enter game code:</p>
+    <input type="text" id="joinCode">
+    <input type="text" id="playerName" placeholder="Your name">
+    <button onclick="joinGame()">Join</button>
+    <div id="players"></div>
+    <button id="startGameBtn" class="hidden" onclick="startGame()">Start Game</button>
+  </div>
+
+  <div id="role" class="hidden">
+    <h3>Your Role:</h3>
+    <p id="yourRole"></p>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBgoh7_LOEHu6R_Dp_FElv5kctkKPhoP7M",
+      authDomain: "mafia-assign.firebaseapp.com",
+      databaseURL: "https://mafia-assign-default-rtdb.firebaseio.com",
+      projectId: "mafia-assign",
+      storageBucket: "mafia-assign.firebasestorage.app",
+      messagingSenderId: "688214838809",
+      appId: "1:688214838809:web:418885aa53d5662df22488"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let currentGameCode = null;
+    let currentPlayer = null;
+
+    function showCreate() {
+      const name = document.getElementById('creatorName').value;
+      if (!name) return alert("Enter your name first");
+      currentPlayer = name;
+      document.getElementById('home').classList.add('hidden');
+      document.getElementById('create').classList.remove('hidden');
+    }
+
+    function toggleRoleInputs() {
+      const mode = document.getElementById('modeSelect').value;
+      document.getElementById('customRoles').classList.toggle('hidden', mode !== 'custom');
+    }
+
+    function showJoin() {
+      document.getElementById('home').classList.add('hidden');
+      document.getElementById('join').classList.remove('hidden');
+    }
+
+    function createGame() {
+      const num = parseInt(document.getElementById('numPlayers').value);
+      const code = Math.floor(100000 + Math.random() * 900000);
+      currentGameCode = code;
+
+      const mode = document.getElementById('modeSelect').value;
+      const gameData = {
+        numPlayers: num,
+        players: { [currentPlayer]: true },
+        started: false,
+        mode: mode
+      };
+
+      if (mode === 'custom') {
+        gameData.roles = {
+          Mafia: parseInt(document.getElementById('mafiaCount').value) || 0,
+          Citizen: parseInt(document.getElementById('citizenCount').value) || 0,
+          Doctor: parseInt(document.getElementById('doctorCount').value) || 0,
+          Terrorist: parseInt(document.getElementById('terroristCount').value) || 0,
+          Detective: parseInt(document.getElementById('detectiveCount').value) || 0,
+          God: parseInt(document.getElementById('godCount').value) || 0
+        };
+      }
+
+      db.ref('games/' + code).set(gameData);
+      document.getElementById('gameCodeDisplay').innerText = `Game Code: ${code}`;
+      showJoin();
+      document.getElementById('joinCode').value = code;
+      document.getElementById('playerName').value = currentPlayer;
+      joinGame();
+    }
+
+    function joinGame() {
+      const code = document.getElementById('joinCode').value;
+      const name = document.getElementById('playerName').value;
+      if (!name) return alert("Enter your name");
+
+      currentGameCode = code;
+      currentPlayer = name;
+
+      const playerRef = db.ref(`games/${code}/players/${name}`);
+      playerRef.set(true);
+
+      db.ref(`games/${code}/players`).on('value', snapshot => {
+        const players = snapshot.val();
+        let list = '<p><strong>Players Joined:</strong></p>';
+        for (let p in players) list += `<div>${p}</div>`;
+        document.getElementById('players').innerHTML = list;
+        db.ref(`games/${code}/numPlayers`).once('value', snap => {
+          if (Object.keys(players).length == snap.val()) {
+            document.getElementById('startGameBtn').classList.remove('hidden');
+          }
+        });
+      });
+
+      db.ref(`games/${code}/roles/${name}`).on('value', snap => {
+        const role = snap.val();
+        if (role) {
+          document.getElementById('join').classList.add('hidden');
+          document.getElementById('role').classList.remove('hidden');
+          document.getElementById('yourRole').innerText = role;
+        }
+      });
+    }
+
+    function startGame() {
+      db.ref(`games/${currentGameCode}`).once('value', snapshot => {
+        const game = snapshot.val();
+        const players = Object.keys(game.players);
+
+        let roles = [];
+
+        if (game.mode === 'custom') {
+          for (let role in game.roles) {
+            roles.push(...Array(game.roles[role]).fill(role));
+          }
+        } else {
+          const n = players.length;
+          if (n < 7) {
+            alert("Not enough players for auto mode. Minimum 7 required.");
+            return;
+          }
+          let mafia = Math.floor((n - 4) / 2) - 1;
+          let citizen = Math.floor((n - 4) / 2) + 1;
+          roles = [
+            ...Array(mafia).fill('Mafia'),
+            ...Array(citizen).fill('Citizen'),
+            'Doctor', 'Terrorist', 'Detective', 'God'
+          ];
+        }
+
+        for (let i = roles.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [roles[i], roles[j]] = [roles[j], roles[i]];
+        }
+
+        players.forEach((p, idx) => {
+          db.ref(`games/${currentGameCode}/roles/${p}`).set(roles[idx]);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
