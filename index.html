@@ -2,49 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mafia: Role Assigner</title>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      padding: 20px;
-      background: #121212;
-      color: #f0f0f0;
-      max-width: 600px;
-      margin: auto;
-    }
-    h2, h3 { color: #ffd700; }
-    input, button, select {
-      width: 100%;
-      padding: 12px;
-      margin: 8px 0;
-      border-radius: 10px;
-      border: none;
-      font-size: 16px;
-      box-sizing: border-box;
-    }
-    button {
-      background-color: #1e90ff;
-      color: white;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #0f78d1;
-    }
+    body { font-family: Arial; padding: 20px; }
+    #players { margin-top: 20px; }
     .hidden { display: none; }
-    #players {
-      margin-top: 20px;
-      padding: 10px;
-      background-color: #1e1e1e;
-      border-radius: 10px;
-    }
-    @media (max-width: 480px) {
-      h2, h3 {
-        font-size: 1.5em;
-      }
-    }
   </style>
 </head>
 <body>
@@ -205,6 +169,10 @@
           }
         } else {
           const n = players.length;
+          if (n < 7) {
+            alert("Not enough players for auto mode. Minimum 7 required.");
+            return;
+          }
           let mafia = Math.floor((n - 4) / 2) - 1;
           let citizen = Math.floor((n - 4) / 2) + 1;
           roles = [
@@ -227,4 +195,3 @@
   </script>
 </body>
 </html>
-
