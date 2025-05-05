@@ -152,9 +152,7 @@
 - Detective: 1
 - God: 1`;
 
-        if (!confirm(rolesPreview + "\n\nDo you want to proceed with this setup?")) {
-          return;
-        }
+        if (!confirm(rolesPreview + "\n\nDo you want to proceed with this setup?")) return;
       }
 
       const code = Math.floor(100 + Math.random() * 900);
@@ -202,8 +200,7 @@
       currentGameCode = code;
       currentPlayer = name;
 
-      const playerRef = db.ref(`games/${code}/players/${name}`);
-      playerRef.set(true);
+      db.ref(`games/${code}/players/${name}`).set(true);
 
       db.ref(`games/${code}/players`).on('value', snapshot => {
         const players = snapshot.val();
@@ -221,9 +218,10 @@
       db.ref(`games/${code}/roles/${name}`).on('value', snap => {
         const role = snap.val();
         if (role) {
+          const allowedRoles = ['Mafia', 'Citizen', 'Doctor', 'Terrorist', 'Detective', 'God'];
           document.getElementById('join').classList.add('hidden');
           document.getElementById('role').classList.remove('hidden');
-          document.getElementById('yourRole').innerText = role;
+          document.getElementById('yourRole').innerText = allowedRoles.includes(role) ? role : "Unknown";
         }
       });
     }
@@ -231,12 +229,15 @@
     function startGame() {
       db.ref(`games/${currentGameCode}`).once('value', snapshot => {
         const game = snapshot.val();
-        const players = Object.keys(game.players);
+        const players = [...Object.keys(game.players)];
         let roles = [];
+        const validRoles = ['Mafia', 'Citizen', 'Doctor', 'Terrorist', 'Detective', 'God'];
 
         if (game.mode === 'custom') {
           for (let role in game.roles) {
-            roles.push(...Array(game.roles[role]).fill(role));
+            if (validRoles.includes(role)) {
+              roles.push(...Array(game.roles[role]).fill(role));
+            }
           }
         } else {
           const n = players.length;
@@ -255,6 +256,12 @@
           ];
         }
 
+        if (roles.length !== players.length) {
+          alert("Error: Number of roles does not match number of players.");
+          console.error("Mismatch!", { roles, players });
+          return;
+        }
+
         // Shuffle roles
         for (let i = roles.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
@@ -263,7 +270,10 @@
 
         // Assign roles
         players.forEach((p, idx) => {
-          db.ref(`games/${currentGameCode}/roles/${p}`).set(roles[idx]);
+          const role = roles[idx];
+          const assigned = validRoles.includes(role) ? role : "Unknown";
+          db.ref(`games/${currentGameCode}/roles/${p}`).set(assigned);
+          console.log(`${p} => ${assigned}`);
         });
       });
     }
